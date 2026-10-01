@@ -3,7 +3,7 @@
 import { firebaseConfig } from "./firebase-config.js";
 
 const $ = s => document.querySelector(s);
-const APP_VERSION = "1";
+const APP_VERSION = "2";
 const BRANCHES = ["b1", "b2"];
 const DEFAULT_NAMES = { b1: "قديم", b2: "جديد" };
 const WORKERS = ["w1", "w2", "w3"];
@@ -76,7 +76,7 @@ async function makeStore() {
     $("#lGo").onclick = async () => {
       $("#lStatus").textContent = "";
       try { await A.signInWithEmailAndPassword(auth, $("#lEmail").value.trim(), $("#lPass").value); }
-      catch (e) { $("#lStatus").textContent = "الإيميل أو كلمة المرور غير صحيحة"; }
+      catch (e) { $("#lStatus").textContent = loginError(e && e.code); }
     };
     $("#lPass").addEventListener("keydown", e => { if (e.key === "Enter") $("#lGo").click(); });
   });
@@ -88,6 +88,17 @@ async function makeStore() {
     write(k, patch) { return F.setDoc(ref(k), Object.assign(patch, { updatedAt: new Date().toISOString(), by: user.email }), { merge: true }); },
     signOut() { return A.signOut(auth); },
   };
+}
+// Firebase hides on purpose whether the e-mail exists; say what can be said, in plain words
+function loginError(code) {
+  switch (code) {
+    case "auth/invalid-email": return "الإيميل مكتوب بشكل غير صحيح، تأكد من @ والنقطة";
+    case "auth/missing-password": return "اكتب كلمة المرور";
+    case "auth/too-many-requests": return "محاولات كثيرة خاطئة؛ انتظر بضع دقائق ثم حاول مرة أخرى";
+    case "auth/network-request-failed": return "لا يوجد اتصال بالإنترنت";
+    case "auth/user-disabled": return "هذا الحساب موقوف في Firebase";
+    default: return "الإيميل أو كلمة المرور غير صحيحة. اكتب الإيميل كما هو في Firebase حرفاً بحرف";
+  }
 }
 function showLogin() { $("#loginView").hidden = false; $("#appView").hidden = true; }
 function status(t, warn) { const el = $("#status"); el.textContent = t || ""; el.classList.toggle("warn", !!warn); }
