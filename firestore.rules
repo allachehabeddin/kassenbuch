@@ -1,0 +1,10 @@
+rules_version = '2';
+// Only the accounts created in Firebase Authentication (Alaa, Yazan) can read or write.
+// Sign-up from the app is off in Authentication → Settings → User actions.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    match /months/{id}   { allow read, write: if signedIn(); }
+    match /settings/{id} { allow read, write: if signedIn(); }
+  }
+}
